@@ -22,7 +22,9 @@ def train_one_epoch(loader, model, optimizer, loss_fn, device):
     stem_losses = {stem: 0.0 for stem in config.STEMS}
     
     for mixture, stems_target in loop:
+        # mixture: (Batch, 1 channel, Frequency bins, Time frames)
         mixture = mixture.to(device)  # (B, 1, F, T)
+        # stems_target: (Batch, 4 stems, Frequency bins, Time frames)
         stems_target = stems_target.to(device)  # (B, 4, F, T)
 
         # Forward
@@ -66,7 +68,9 @@ def validate_one_epoch(loader, model, loss_fn, device):
     
     with torch.no_grad():
         for mixture, stems_target in loop:
+            # mixture: (Batch, 1 channel, Frequency bins, Time frames)
             mixture = mixture.to(device)  # (B, 1, F, T)
+            # stems_target: (Batch, 4 stems, Frequency bins, Time frames)
             stems_target = stems_target.to(device)  # (B, 4, F, T)
 
             # Forward

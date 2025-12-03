@@ -173,13 +173,13 @@ def main():
         
         try:
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                # Get total size for progress bar
-                total_size = sum(f.file_size for f in zip_ref.filelist)
+                # Extract with simple progress based on file count
+                members = zip_ref.namelist()
                 
-                with tqdm(total=total_size, unit='B', unit_scale=True, desc="Extracting") as pbar:
-                    for file in zip_ref.filelist:
-                        zip_ref.extract(file, extract_path)
-                        pbar.update(file.file_size)
+                with tqdm(total=len(members), unit='files', desc="Extracting") as pbar:
+                    for member in members:
+                        zip_ref.extract(member, extract_path)
+                        pbar.update(1)
             
             print(f"✓ Extracted to: {extract_path}")
         except Exception as e:
