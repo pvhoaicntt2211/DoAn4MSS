@@ -6,20 +6,42 @@
   <title>Kết quả tách - MSS</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 40px; color: #222; }
-    .card { max-width: 720px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
+    .card { max-width: 800px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
     h1 { font-size: 22px; margin-top: 0; }
+    h2 { font-size: 18px; margin-top: 20px; margin-bottom: 12px; color: #374151; }
+    .stem-section { margin: 20px 0; padding: 16px; background: #f9fafb; border-radius: 8px; }
+    .stem-title { font-weight: 600; margin-bottom: 8px; color: #111827; text-transform: capitalize; }
     .row { margin: 12px 0; }
-    a.btn { display: inline-block; background: #111827; color: white; text-decoration:none; border-radius: 8px; padding: 10px 16px; margin-right: 8px; }
+    a.btn { display: inline-block; background: #111827; color: white; text-decoration:none; border-radius: 8px; padding: 10px 16px; margin: 4px; }
     a.btn:hover { background: #0b1220; }
+    audio { width: 100%; margin: 8px 0; }
+    .download-all { margin: 20px 0; padding: 16px; background: #eff6ff; border-radius: 8px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Kết quả tách</h1>
-    <div class="row">
-      <a class="btn" href="{{ url_for('download', session_id=session_id, filename=vocals_file) }}">Tải Vocals</a>
-      <a class="btn" href="{{ url_for('download', session_id=session_id, filename=accomp_file) }}">Tải Accompaniment</a>
+    <h1>🎵 Kết quả tách 4-stem</h1>
+    
+    <h2>Nghe trực tiếp:</h2>
+    {% for stem_name, stem_file in stem_files.items() %}
+    <div class="stem-section">
+      <div class="stem-title">{{ stem_name }}</div>
+      <audio controls>
+        <source src="{{ url_for('download', session_id=session_id, filename=stem_file) }}" type="audio/wav">
+        Trình duyệt không hỗ trợ audio player.
+      </audio>
     </div>
+    {% endfor %}
+
+    <div class="download-all">
+      <h2>Tải về từng stem:</h2>
+      <div class="row">
+        {% for stem_name, stem_file in stem_files.items() %}
+        <a class="btn" href="{{ url_for('download', session_id=session_id, filename=stem_file) }}">📥 {{ stem_name|capitalize }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    
     <div class="row">
       <a href="/">← Tách bài khác</a>
     </div>

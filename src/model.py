@@ -23,7 +23,7 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1): # Đã sửa
+    def __init__(self, in_channels=1, out_channels=4): # Changed to 4 for 4-stem separation
         super(UNet, self).__init__()
         self.inc = DoubleConv(in_channels, 64)
         self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(64, 128))

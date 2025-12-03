@@ -19,7 +19,8 @@
 </head>
 <body>
   <div class="card">
-    <h1>Tách giọng hát & nhạc (MSS)</h1>
+    <h1>🎵 Tách nhạc 4-stem (MSS)</h1>
+    <p style="color: #6b7280; margin-bottom: 16px;">Tách nhạc thành 4 stems: Vocals, Drums, Bass, Other</p>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -33,6 +34,23 @@
       <label>Chọn file bài hát</label>
       <input type="file" name="audio" accept="audio/*" required>
       <div class="hint">Hỗ trợ: wav, mp3, m4a, flac, ogg. Với mp3 có thể cần ffmpeg.</div>
+
+      <label>Chọn stems muốn tách</label>
+      <div style="display: flex; gap: 16px; margin: 8px 0;">
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+          <input type="checkbox" name="stems" value="vocals" checked> Vocals
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+          <input type="checkbox" name="stems" value="drums" checked> Drums
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+          <input type="checkbox" name="stems" value="bass" checked> Bass
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+          <input type="checkbox" name="stems" value="other" checked> Other
+        </label>
+      </div>
+      <div class="hint">Chọn ít nhất một stem để tách (mặc định: tất cả)</div>
 
       <label>Checkpoint (tuỳ chọn)</label>
       <input type="text" name="checkpoint" placeholder="checkpoints/best_model.pth">

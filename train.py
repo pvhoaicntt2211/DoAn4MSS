@@ -19,18 +19,30 @@ def train_one_epoch(loader, model, optimizer, loss_fn, device):
     loop.set_description(f"Training")
     
     total_loss = 0.0
-    for mixture, vocals in loop:
-        mixture = mixture.to(device)
-        vocals = vocals.to(device)
+    stem_losses = {stem: 0.0 for stem in config.STEMS}
+    
+    for mixture, stems_target in loop:
+        # mixture: (Batch, 1 channel, Frequency bins, Time frames)
+        mixture = mixture.to(device)  # (B, 1, F, T)
+        # stems_target: (Batch, 4 stems, Frequency bins, Time frames)
+        stems_target = stems_target.to(device)  # (B, 4, F, T)
 
         # Forward
-        # Mô hình dự đoán spectrogram của vocal từ spectrogram của mixture
-        predicted_vocals = model(mixture)
+        # Model predicts 4 masks (one for each stem)
+        predicted_masks = model(mixture)  # (B, 4, F, T)
 
-        # Tính loss
-        # Lưu ý: Mô hình Sigmoid ở cuối trả về giá trị [0,1].
-        # Ta cần nhân nó với mixture đầu vào để có được spectrogram vocal thực sự
-        loss = loss_fn(predicted_vocals * mixture, vocals)
+        # Apply masks to mixture to get predicted stems
+        # Expand mixture to match stems shape
+        mixture_expanded = mixture.expand(-1, 4, -1, -1)  # (B, 4, F, T)
+        predicted_stems = predicted_masks * mixture_expanded
+
+        # Calculate weighted loss for each stem
+        loss = 0.0
+        for i, stem in enumerate(config.STEMS):
+            stem_loss = loss_fn(predicted_stems[:, i:i+1, :, :], stems_target[:, i:i+1, :, :])
+            weighted_loss = config.STEM_WEIGHTS[stem] * stem_loss
+            loss += weighted_loss
+            stem_losses[stem] += stem_loss.item()
 
         # Backward
         optimizer.zero_grad()
@@ -40,7 +52,11 @@ def train_one_epoch(loader, model, optimizer, loss_fn, device):
         total_loss += loss.item()
         loop.set_postfix(loss=loss.item())
         
-    return total_loss / len(loader)
+    # Calculate average losses
+    avg_total_loss = total_loss / len(loader)
+    avg_stem_losses = {stem: stem_losses[stem] / len(loader) for stem in config.STEMS}
+    
+    return avg_total_loss, avg_stem_losses
 
 def validate_one_epoch(loader, model, loss_fn, device):
     model.eval() # Đặt model ở chế độ evaluation
@@ -48,21 +64,41 @@ def validate_one_epoch(loader, model, loss_fn, device):
     loop.set_description(f"Validating")
     
     total_loss = 0.0
+    stem_losses = {stem: 0.0 for stem in config.STEMS}
+    
     with torch.no_grad():
-        for mixture, vocals in loop:
-            mixture = mixture.to(device)
-            vocals = vocals.to(device)
+        for mixture, stems_target in loop:
+            # mixture: (Batch, 1 channel, Frequency bins, Time frames)
+            mixture = mixture.to(device)  # (B, 1, F, T)
+            # stems_target: (Batch, 4 stems, Frequency bins, Time frames)
+            stems_target = stems_target.to(device)  # (B, 4, F, T)
 
-            predicted_vocals = model(mixture)
-            loss = loss_fn(predicted_vocals * mixture, vocals)
+            # Forward
+            predicted_masks = model(mixture)  # (B, 4, F, T)
+            
+            # Apply masks to mixture
+            mixture_expanded = mixture.expand(-1, 4, -1, -1)
+            predicted_stems = predicted_masks * mixture_expanded
+
+            # Calculate weighted loss for each stem
+            loss = 0.0
+            for i, stem in enumerate(config.STEMS):
+                stem_loss = loss_fn(predicted_stems[:, i:i+1, :, :], stems_target[:, i:i+1, :, :])
+                weighted_loss = config.STEM_WEIGHTS[stem] * stem_loss
+                loss += weighted_loss
+                stem_losses[stem] += stem_loss.item()
+
             total_loss += loss.item()
             loop.set_postfix(loss=loss.item())
 
-    return total_loss / len(loader)
+    avg_total_loss = total_loss / len(loader)
+    avg_stem_losses = {stem: stem_losses[stem] / len(loader) for stem in config.STEMS}
+    
+    return avg_total_loss, avg_stem_losses
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train U-Net for vocal/accompaniment separation")
+    parser = argparse.ArgumentParser(description="Train U-Net for 4-stem music source separation")
     parser.add_argument("--train-dir", default=config.TRAIN_DIR, help="Thư mục dữ liệu train")
     parser.add_argument("--valid-dir", default=config.VALID_DIR, help="Thư mục dữ liệu valid")
     parser.add_argument("--checkpoint-dir", default=config.CHECKPOINT_DIR, help="Thư mục lưu checkpoint")
@@ -76,7 +112,7 @@ def main():
     os.makedirs(args.checkpoint_dir, exist_ok=True)
 
     # Khởi tạo model, loss, optimizer
-    model = UNet(in_channels=1, out_channels=1).to(config.DEVICE)
+    model = UNet(in_channels=1, out_channels=4).to(config.DEVICE)  # 4 output channels for 4 stems
     loss_fn = nn.L1Loss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
@@ -97,11 +133,15 @@ def main():
     for epoch in range(args.epochs):
         print(f"\n--- Epoch {epoch+1}/{args.epochs} ---")
 
-        train_loss = train_one_epoch(train_loader, model, optimizer, loss_fn, config.DEVICE)
+        train_loss, train_stem_losses = train_one_epoch(train_loader, model, optimizer, loss_fn, config.DEVICE)
         print(f"Average Training Loss: {train_loss:.4f}")
+        for stem, loss_val in train_stem_losses.items():
+            print(f"  {stem}: {loss_val:.4f}")
 
-        valid_loss = validate_one_epoch(valid_loader, model, loss_fn, config.DEVICE)
+        valid_loss, valid_stem_losses = validate_one_epoch(valid_loader, model, loss_fn, config.DEVICE)
         print(f"Average Validation Loss: {valid_loss:.4f}")
+        for stem, loss_val in valid_stem_losses.items():
+            print(f"  {stem}: {loss_val:.4f}")
 
         # Lưu lại model nếu validation loss tốt hơn
         if valid_loss < best_valid_loss:

@@ -23,3 +23,7 @@ N_FFT = 2048
 HOP_LENGTH = 512
 CHUNK_SECONDS = 5
 CHUNK_SAMPLES = int(CHUNK_SECONDS * SAMPLE_RATE)
+
+# --- Cấu hình 4-stem separation ---
+STEMS = ['vocals', 'drums', 'bass', 'other']
+STEM_WEIGHTS = {'vocals': 1.0, 'drums': 1.0, 'bass': 1.0, 'other': 1.0}
