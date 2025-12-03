@@ -5,3 +5,4 @@ librosa
 tqdm
 soundfile
 flask
+requests

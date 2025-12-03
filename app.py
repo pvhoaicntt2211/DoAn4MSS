@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
 
 from inference import separate_file
+import config
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -67,20 +68,24 @@ def upload():
             flash("Không tìm thấy checkpoint. Hãy train trước hoặc đặt checkpoints/best_model.pth")
             return redirect(url_for("index"))
 
+    # Get selected stems from form (default to all)
+    selected_stems = request.form.getlist('stems')
+    if not selected_stems:
+        selected_stems = None  # Will default to all stems in separate_file
+    
     try:
-        vocals_path, accomp_path = separate_file(str(save_path), str(session_out_dir), ckpt)
+        output_paths = separate_file(str(save_path), str(session_out_dir), ckpt, selected_stems)
     except Exception as e:
         flash(f"Lỗi khi tách: {e}")
         return redirect(url_for("index"))
 
-    vocals_file = os.path.basename(vocals_path)
-    accomp_file = os.path.basename(accomp_path)
+    # Create a dict of stem files
+    stem_files = {stem: os.path.basename(path) for stem, path in output_paths.items()}
 
     return render_template(
         "result.html",
         session_id=session_id,
-        vocals_file=vocals_file,
-        accomp_file=accomp_file,
+        stem_files=stem_files,
     )
 
 
