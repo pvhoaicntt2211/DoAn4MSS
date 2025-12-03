@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MSS - Tách giọng & nhạc</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 40px; color: #222; }
+    .card { max-width: 720px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
+    h1 { font-size: 22px; margin-top: 0; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; }
+    input[type=file], input[type=text] { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; }
+    .hint { color: #6b7280; font-size: 12px; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    .btn { background: #111827; color: white; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+    .btn:hover { background: #0b1220; }
+    .flash { background: #fef3c7; color: #92400e; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Tách giọng hát & nhạc (MSS)</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for m in messages %}
+          <div class="flash">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <label>Chọn file bài hát</label>
+      <input type="file" name="audio" accept="audio/*" required>
+      <div class="hint">Hỗ trợ: wav, mp3, m4a, flac, ogg. Với mp3 có thể cần ffmpeg.</div>
+
+      <label>Checkpoint (tuỳ chọn)</label>
+      <input type="text" name="checkpoint" placeholder="checkpoints/best_model.pth">
+      <div class="hint">Nếu để trống, dùng checkpoints/best_model.pth (nếu tồn tại).</div>
+
+      <div style="margin-top:16px" class="row">
+        <button class="btn" type="submit">Tách ngay</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

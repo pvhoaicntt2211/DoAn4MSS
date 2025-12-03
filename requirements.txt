@@ -1,0 +1,7 @@
+  # Liệt kê các thư viện Python cần thiết cho dự án
+torch
+numpy
+librosa
+tqdm
+soundfile
+flask
